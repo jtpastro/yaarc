@@ -1,20 +1,21 @@
-import java.io.*;
-import java.net.*;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
-class Client
-{
- public static void main(String argv[]) throws Exception
- {
-  String sentence;
-  String modifiedSentence;
-  BufferedReader inFromUser = new BufferedReader( new InputStreamReader(System.in));
-  Socket clientSocket = new Socket("localhost", 5678);
-  DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-  BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-  sentence = inFromUser.readLine();
-  outToServer.writeBytes(sentence + '\n');
-  modifiedSentence = inFromServer.readLine();
-  System.out.println("FROM SERVER: " + modifiedSentence);
-  clientSocket.close();
- }
+public class Client {
+
+    private Client() {}
+
+    public static void main(String[] args) {
+
+	String host = (args.length < 1) ? null : args[0];
+	try {
+	    Registry registry = LocateRegistry.getRegistry(Integer.parseInt(host));
+	    Hello stub = (Hello) registry.lookup("Hello");
+	    String response = stub.sayHello();
+	    System.out.println("response: " + response);
+	} catch (Exception e) {
+	    System.err.println("Client exception: " + e.toString());
+	    e.printStackTrace();
+	}
+    }
 }
