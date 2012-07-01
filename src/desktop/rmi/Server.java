@@ -1,4 +1,4 @@
-package desktop;
+package desktop.rmi;
 
 import java.awt.AWTException;
 import java.awt.MouseInfo;
@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -24,9 +25,17 @@ public class Server extends Robot implements KeyEventGenerator {
 	private boolean altStatus;
 	private static int firstDigitCharVal = 48;
 	
-    public Server() throws AWTException {
+    public Server(int port) throws AWTException, SocketException, RemoteException {
     	super();
     	altStatus = false;
+    	String ip = fun().get(0);
+		System.setProperty( "java.rmi.servethis.hostname", ip ); 
+		LocateRegistry.createRegistry(port);
+	    KeyEventGenerator stub = (KeyEventGenerator) UnicastRemoteObject.exportObject(this, 0);
+
+	    // Bind the remote object's stub in the registry
+	    Registry registry = LocateRegistry.getRegistry(port);
+	    registry.rebind("controller", stub);
 		
     }
     
@@ -49,12 +58,8 @@ public class Server extends Robot implements KeyEventGenerator {
 	
 public static List<String> fun() throws SocketException{
 	List<String> ips = new ArrayList<String>();
-	for (
-		    final Enumeration< NetworkInterface > interfaces =
-		        NetworkInterface.getNetworkInterfaces( );
-		    interfaces.hasMoreElements( );
-		)
-		{
+	for (final Enumeration< NetworkInterface > interfaces = NetworkInterface.getNetworkInterfaces( );
+		 interfaces.hasMoreElements( );){
 		    final NetworkInterface cur = interfaces.nextElement( );
 
 		    if ( cur.isLoopback( ) || cur.getName( ).contains("ham")) continue;
@@ -72,15 +77,7 @@ public static List<String> fun() throws SocketException{
     public static void main(String args[]) {
 	
 	try {
-		String ip = fun().get(0);
-		System.setProperty( "java.rmi.servethis.hostname", ip ); 
-		LocateRegistry.createRegistry(1078);
-	    Server obj = new Server();
-	    KeyEventGenerator stub = (KeyEventGenerator) UnicastRemoteObject.exportObject(obj, 0);
-
-	    // Bind the remote object's stub in the registry
-	    Registry registry = LocateRegistry.getRegistry(1078);
-	    registry.bind("controller", stub);
+		new Server(1078);
 
 	    System.err.println("Server ready");
 	} catch (Exception e) {
